@@ -1,0 +1,12 @@
+LATEST SALES AUTOMATION CHANGES
+
+1. DRS GST now includes GST on Sales + GST on Shipping + GST on Refund.
+2. Manual Journal GST treatment is unchanged: GST on Refund remains a separate line.
+3. New countries never fall back to Other, Taiwan, or another country's revenue GL.
+4. Missing Revenue / Refund / Other Tax GL appears in Review only when that value is actually needed.
+5. Saving a missing GL automatically reprocesses all outputs.
+6. Saved GL mappings are reused for future files on the same browser/site.
+7. Browser storage now saves only user overrides/new mappings, not a full copy of the shipped configuration. This prevents old browser data from overriding future base corrections.
+8. Legacy named-country revenue mappings containing 'Other' are treated as unresolved. Vietnam's legacy Other mapping is no longer used; an exact Vietnam revenue GL must be entered when Vietnam appears.
+9. Export/Import Mapping remains available as a backup.
+10. Manual Journal date remains DD/MM/YYYY.

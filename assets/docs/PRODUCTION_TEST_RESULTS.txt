@@ -1,0 +1,30 @@
+SAINT SALES AUTOMATION - NEXT-WEEK SAFETY TEST RESULTS
+Tested: 24 September 2026
+
+STATUS: PASS
+
+Focused tests executed against the current calculation engine:
+1. Australia DRS GST includes Sales + Shipping + Refund GST: PASS
+2. Manual Journal still posts GST on Refund separately and keeps pre-refund GST credit: PASS
+3. Manual Journal date format DD/MM/YYYY: PASS
+4. New country does not fall back to Taiwan: PASS
+5. New country does not fall back to Product Revenue - Other: PASS
+6. Saved Japan Revenue GL is reused on a later week: PASS
+7. Saved Japan mapping does not change France or another country's mapping: PASS
+8. Revenue mapping does not get requested again when only Refund GL is missing: PASS
+9. Saved Refund GL is reused on a later week: PASS
+10. Arbitrary future dates and order IDs process without fixed week/date logic: PASS
+11. Same Order name on two different days stays isolated by Order + Day: PASS
+12. Country values do not leak between days: PASS
+13. Unknown gateway cannot borrow another gateway's clearing GL: PASS
+14. Persistent browser storage contains only user overrides/new mappings: PASS
+15. A future shipped base GL correction is not overwritten by an old full saved config: PASS
+16. Legacy Vietnam 'Product Revenue - Other' mapping is no longer accepted; exact Vietnam Revenue GL is required: PASS
+17. app.js syntax check: PASS
+18. sales-engine.js syntax check: PASS
+
+Important behavior:
+- Saved mappings apply only to their exact country/gateway key.
+- If a new country appears without an exact Revenue GL, the line stays REVIEW/unmapped until the GL is entered.
+- Downloads remain available for checking, but unresolved Xero lines carry blank account/tax fields and a REVIEW description.
+- localStorage persists across browser close and PC shutdown on the same browser/site. Export Mapping provides a backup for browser/site changes.

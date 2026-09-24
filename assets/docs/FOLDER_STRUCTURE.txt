@@ -1,0 +1,16 @@
+Saint_Sales_Automation/
+|-- index.html
+`-- assets/
+    |-- config/
+    |   |-- saint-sales-config.js
+    |   `-- saint-sales-mapping.json
+    |-- css/
+    |   `-- styles.css
+    |-- js/
+    |   |-- sales-engine.js
+    |   `-- app.js
+    `-- docs/
+        |-- Sales_Updation.docx
+        |-- README.txt
+        |-- FOLDER_STRUCTURE.txt
+        `-- PRODUCTION_TEST_RESULTS.txt
