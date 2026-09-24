@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saint Sales Automation</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>Saint Sales Automation</h1>
+        <p>Upload Shopify reports, review only what needs attention, then download the outputs.</p>
+      </div>
+      <a class="sop-link" href="assets/docs/Sales_Updation.pdf" target="_blank" rel="noopener">View SOP</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="surface upload-section">
+      <div class="section-head">
+        <div>
+          <h2>1. Upload reports</h2>
+          <p>Use the same date range for both required Shopify reports.</p>
+        </div>
+      </div>
+
+      <div class="upload-grid">
+        <div class="upload-card">
+          <div class="upload-label"><span>Net payments by order</span><span class="required">Required</span></div>
+          <div class="dropzone" data-input="netFile" data-kind="net" data-status="netStatus" tabindex="0" role="button" aria-label="Upload Net payments by order CSV">
+            <input id="netFile" type="file" accept=".csv,text/csv" hidden />
+            <div class="drop-icon" aria-hidden="true">↑</div>
+            <div class="drop-content">
+              <div class="drop-title">Drop CSV here or click to browse</div>
+              <div id="netStatus" class="drop-status">No file selected</div>
+            </div>
+            <button class="remove-file hidden" type="button" aria-label="Remove Net payments file">Remove</button>
+          </div>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-label"><span>Total sales by order</span><span class="required">Required</span></div>
+          <div class="dropzone" data-input="salesFile" data-kind="sales" data-status="salesStatus" tabindex="0" role="button" aria-label="Upload Total sales by order CSV">
+            <input id="salesFile" type="file" accept=".csv,text/csv" hidden />
+            <div class="drop-icon" aria-hidden="true">↑</div>
+            <div class="drop-content">
+              <div class="drop-title">Drop CSV here or click to browse</div>
+              <div id="salesStatus" class="drop-status">No file selected</div>
+            </div>
+            <button class="remove-file hidden" type="button" aria-label="Remove Total sales file">Remove</button>
+          </div>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-label"><span>Payments by gateway summary</span><span class="optional">Optional</span></div>
+          <div class="dropzone" data-input="gatewayFile" data-kind="gateway" data-status="gatewayStatus" tabindex="0" role="button" aria-label="Upload Payments by gateway summary CSV">
+            <input id="gatewayFile" type="file" accept=".csv,text/csv" hidden />
+            <div class="drop-icon" aria-hidden="true">↑</div>
+            <div class="drop-content">
+              <div class="drop-title">Drop CSV here or click to browse</div>
+              <div id="gatewayStatus" class="drop-status">No file selected</div>
+            </div>
+            <button class="remove-file hidden" type="button" aria-label="Remove gateway summary file">Remove</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="primary-actions">
+        <button id="processBtn" class="primary" type="button">Process Files</button>
+      </div>
+      <div id="errorMsg" class="message error" role="alert"></div>
+      <div id="okMsg" class="message success" role="status"></div>
+    </section>
+
+    <section id="results" class="hidden results-section">
+      <section class="surface review-section">
+        <div class="review-title-row">
+          <div>
+            <h2>2. Review</h2>
+            <p id="processMeta" class="process-meta"></p>
+            <p class="review-save-note">New GLs entered here are remembered for future files on this browser, even after closing the browser or shutting down the PC.</p>
+          </div>
+          <span id="reviewStatusPill" class="status-pill"></span>
+        </div>
+        <div id="reviewBanner" class="review-banner" role="status"></div>
+        <div id="reviewActionMsg" class="review-action-message hidden" role="status"></div>
+        <div id="auditTable"></div>
+      </section>
+
+      <section class="surface downloads">
+        <div id="downloadNotice" class="download-notice" role="status"></div>
+        <div class="downloads-row">
+          <div>
+            <h2>3. Download</h2>
+            <p>Choose the file you need.</p>
+          </div>
+          <div class="download-actions">
+            <button id="xlsxBtn" class="secondary" type="button">Excel Workbook</button>
+            <button id="recBtn" class="secondary" type="button">Reconciliation CSV</button>
+            <button id="journalBtn" class="secondary" type="button">Journal CSV</button>
+            <button id="xeroBtn" class="primary" type="button">Xero CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <details class="surface detail-card">
+        <summary>View processed data</summary>
+        <div class="detail-body">
+          <nav class="tabs" aria-label="Processed data">
+            <button class="tab active" data-tab="reconciliation" type="button">Reconciliation</button>
+            <button class="tab" data-tab="journal" type="button">Journal</button>
+            <button class="tab" data-tab="xero" type="button">Xero Import</button>
+          </nav>
+
+          <section id="panel-reconciliation" class="panel active section">
+            <div class="panel-head"><h2>Daily reconciliation</h2></div>
+            <div id="recTable" class="table-wrap"></div>
+            <div class="panel-head summary-head"><h3>Country summary</h3></div>
+            <div id="summaryTable" class="table-wrap"></div>
+          </section>
+
+          <section id="panel-journal" class="panel section">
+            <div class="panel-head"><h2>Journal</h2></div>
+            <div id="journalTable" class="table-wrap"></div>
+          </section>
+
+          <section id="panel-xero" class="panel section">
+            <div class="panel-head"><h2>Xero import preview</h2></div>
+            <div id="xeroTable" class="table-wrap"></div>
+          </section>
+        </div>
+      </details>
+
+      <details class="surface detail-card advanced-card">
+        <summary>Advanced settings</summary>
+        <section id="panel-mapping" class="mapping detail-body">
+          <div class="panel-head"><h2>Accounting settings</h2><p>Use only when a mapping needs to be changed manually or backed up.</p></div>
+          <div class="settings-actions">
+            <button id="saveMappingBtn" class="primary" type="button">Save settings</button>
+            <button id="resetMappingBtn" class="secondary" type="button">Reset</button>
+            <button id="exportMappingBtn" class="secondary" type="button">Export JSON</button>
+            <button id="importMappingBtn" class="secondary" type="button">Import JSON</button>
+            <input id="importMappingFile" type="file" accept="application/json,.json" hidden />
+          </div>
+          <h3>Core accounts</h3>
+          <div id="coreMap" class="table-wrap"></div>
+          <h3>Gateway clearing accounts</h3>
+          <div id="gatewayMap" class="table-wrap"></div>
+          <h3>Country accounts</h3>
+          <div id="countryMap" class="table-wrap"></div>
+        </section>
+      </details>
+    </section>
+  </main>
+
+  <script src="assets/config/saint-sales-config.js"></script>
+  <script src="assets/js/sales-engine.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
