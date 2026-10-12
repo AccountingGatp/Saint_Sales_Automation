@@ -1,31 +1,25 @@
 SAINT SALES AUTOMATION
 
 How to use
-1. Open index.html (or the deployed Vercel URL).
+1. Open index.html.
 2. Upload or drag-and-drop:
    - Net payments by order (required)
    - Total sales by order (required)
    - Payments by gateway summary (optional)
 3. Click Process Files.
 4. Review appears before Downloads.
-   - Only missing values actually required by the current files are requested.
-   - Enter the missing GL once and click Save.
-   - The app saves that mapping in the browser, automatically reprocesses, and reuses it in future files.
+   - If a missing GL can be fixed in the app, enter only that GL and click Save.
+   - Saving automatically reprocesses all outputs.
+   - Other source/reconciliation issues remain visible for review.
 5. Download the required output.
 
-Current accounting behavior
-- DRS Total GST Payable includes GST on Sales + GST on Shipping + GST on Refund.
-- Manual Journal logic is unchanged; GST on Refund remains separate.
+Important behavior
+- Downloads are never disabled because of Review items.
+- If an Xero mapping is still unresolved, the downloadable Xero CSV keeps that monetary line with a blank Account Code/Tax Rate and a "REVIEW -" description so the amount is not silently omitted.
+- Resolve Review items before posting the Xero journal.
 - Manual Journal / Xero date format is DD/MM/YYYY.
-- New countries must use their own Revenue/Refund GLs when required.
-- There is no automatic Product Revenue - Other or Taiwan/other-country fallback for missing country GLs.
-- If a country GL is missing, the exact missing field appears in Review.
-- Downloads stay available during Review; unresolved Xero lines remain visible with blank Account Code/Tax Rate and a REVIEW description.
-
-Saved GL mappings
-- Review mappings are stored in browser localStorage.
-- They normally remain after closing the browser or shutting down/restarting the PC, as long as the same browser and site URL are used.
-- Advanced Settings includes Export JSON / Import JSON for backup or moving mappings to another browser/device.
+- Detailed reconciliation/journal previews and Advanced Settings are collapsed by default to keep the UI minimal.
+- View SOP opens the original Sales Updation SOP PDF in a new tab.
 
 Project structure
 index.html
@@ -36,3 +30,12 @@ assets/config/saint-sales-config.js
 assets/config/saint-sales-mapping.json
 assets/docs/Sales_Updation.pdf
 assets/docs/Sales_Updation.docx
+
+Current Sales Xero CSV update:
+- Product Revenue - Peru = GL 273
+- Refunds - Peru = GL 274
+- Product Revenue - Hong Kong = GL 267
+- Product Revenue - Singapore = GL 268
+- Explicit GST (820) and GST on Refund (820) rows are excluded from the Xero CSV only.
+- DRS and Manual Journal calculations remain separate: DRS Total GST includes refund GST; Manual Journal GST logic remains unchanged.
+- New countries never fall back to Other/Taiwan/another country. Missing country GLs are shown in Review.

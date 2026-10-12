@@ -88,7 +88,8 @@ window.SAINT_SALES_BASE_CONFIG = {
     "accountCode": "",
     "descriptionPrefix": "Product Revenue",
     "taxRate": "BAS Excluded",
-    "order": 900
+    "order": 900,
+    "needsReview": true
   },
   "fallbackRefund": {
     "accountCode": "",
@@ -241,11 +242,27 @@ window.SAINT_SALES_BASE_CONFIG = {
       "revenueTaxRate": "BAS Excluded",
       "revenueOrder": 160
     },
-    "Vietnam": {
-      "revenueAccount": "",
-      "revenueDescription": "Product Revenue - Vietnam",
+    "Hong Kong": {
+      "revenueAccount": 267,
+      "revenueDescription": "Product Revenue - Hong Kong",
       "revenueTaxRate": "BAS Excluded",
-      "revenueOrder": 990
+      "revenueOrder": 170
+    },
+    "Singapore": {
+      "revenueAccount": 268,
+      "revenueDescription": "Product Revenue - Singapore",
+      "revenueTaxRate": "BAS Excluded",
+      "revenueOrder": 180
+    },
+    "Peru": {
+      "revenueAccount": 273,
+      "revenueDescription": "Product Revenue - Peru",
+      "revenueTaxRate": "BAS Excluded",
+      "revenueOrder": 190,
+      "refundAccount": 274,
+      "refundDescription": "Refunds - Peru",
+      "refundTaxRate": "BAS Excluded",
+      "refundOrder": 120
     }
   }
 };

@@ -172,24 +172,20 @@
     const c = cfg.countries[country] || {};
     const missingCountry = !cfg.countries[country];
     const out = {
-      // Revenue must be mapped to the exact country. Never fall back to Other or another country.
-      revenueAccount: c.revenueAccount ?? '',
-      revenueDescription: c.revenueDescription || `Product Revenue - ${country}`,
+      revenueAccount: c.revenueAccount ?? cfg.fallbackRevenue.accountCode,
+      revenueDescription: c.revenueDescription || `${cfg.fallbackRevenue.descriptionPrefix || 'Product Revenue'} - ${country}`,
       revenueTaxRate: c.revenueTaxRate || cfg.fallbackRevenue.taxRate,
       revenueOrder: c.revenueOrder ?? cfg.fallbackRevenue.order,
-      // A named country must use its own revenue mapping. Legacy descriptions that
-      // still contain "Other" are deliberately treated as unresolved under the new rule.
-      revenueUsesOther: /\bother\b/i.test(String(c.revenueDescription || '')),
-      refundAccount: c.refundAccount ?? '',
+      refundAccount: c.refundAccount ?? cfg.fallbackRefund.accountCode,
       refundDescription: c.refundDescription || `${cfg.fallbackRefund.descriptionPrefix} - ${country}`,
       refundTaxRate: c.refundTaxRate || cfg.fallbackRefund.taxRate,
       refundOrder: c.refundOrder ?? cfg.fallbackRefund.order,
-      taxAccount: c.taxAccount ?? '',
+      taxAccount: c.taxAccount ?? cfg.fallbackOtherTax.accountCode,
       taxDescription: c.taxDescription || `${cfg.fallbackOtherTax.descriptionPrefix} - ${country}`,
       taxRate: c.taxRate || cfg.fallbackOtherTax.taxRate,
       taxOrder: c.taxOrder ?? cfg.fallbackOtherTax.order,
       fallback: missingCountry,
-      revenueFallback: !isValidAccount(c.revenueAccount),
+      revenueFallback: !c.revenueAccount,
       refundFallback: !isValidAccount(c.refundAccount),
       taxFallback: !isValidAccount(c.taxAccount)
     };
@@ -327,10 +323,10 @@
       row['GST on Sales'] = round2(gstPart(auSalesInclusive));
       row['Refunds (Australia, excl. GST)'] = round2(auRefund / gstDivisor);
       row['GST on Refund'] = round2(gstPart(auRefund));
-      // DRS requirement: total GST includes sales + shipping + refund GST.
-      // Keep the original pre-refund GST separately for the Manual Journal, which remains unchanged.
-      row._journalGstPayable = round2(gstPart(auGross));
-      row['Total GST Payable'] = round2(row['GST on Sales'] + row['GST on Shipping'] + row['GST on Refund']);
+      // DRS GST includes Sales + Shipping + Refund GST.
+      // Keep the pre-refund GST separately so the Manual Journal calculation remains unchanged.
+      row['_Manual Journal GST Payable'] = round2(gstPart(auGross));
+      row['Total GST Payable'] = round2(row['GST on Shipping'] + row['GST on Sales'] + row['GST on Refund']);
 
       countries.forEach(country => {
         const gross = round2(countryGross.get(key3(day,country,'gross')) || 0);
@@ -523,7 +519,7 @@
       // Credits and income lines.
       actualLine(day,cfg.australia.shipping.accountCode,cfg.australia.shipping.description,cfg.australia.shipping.description,cfg.australia.shipping.taxRate,'credit',row['Shipping (Australia, excl. GST)']||0,debits,credits,'shipping_au');
       actualLine(day,cfg.australia.revenue.accountCode,cfg.australia.revenue.description,cfg.australia.revenue.description,cfg.australia.revenue.taxRate,'credit',row['Sales Revenue (Australia)']||0,debits,credits,'revenue_au');
-      actualLine(day,cfg.gst.accountCode,cfg.gst.description,cfg.gst.description,cfg.gst.taxRate,'credit',row._journalGstPayable ?? row['Total GST Payable'] ?? 0,debits,credits,'gst');
+      actualLine(day,cfg.gst.accountCode,cfg.gst.description,cfg.gst.description,cfg.gst.taxRate,'credit',row['_Manual Journal GST Payable']||0,debits,credits,'gst');
 
       // Other tax is separate where a country-specific tax GL exists (US=221 in the supplied reference).
       const taxCountries = countries.slice().sort((a,b) => {
@@ -550,7 +546,7 @@
         const amount = row[`Sales Revenue (${country})`] || 0;
         if (Math.abs(amount) < 0.005) return;
         const c = getCountryConfig(country,cfg,audits);
-        if (isValidAccount(c.revenueAccount) && !c.revenueUsesOther) actualLine(day,c.revenueAccount,c.revenueDescription,c.revenueDescription,c.revenueTaxRate || 'BAS Excluded','credit',amount,debits,credits,'revenue_export');
+        if (isValidAccount(c.revenueAccount)) actualLine(day,c.revenueAccount,c.revenueDescription,c.revenueDescription,c.revenueTaxRate || 'BAS Excluded','credit',amount,debits,credits,'revenue_export');
         else {
           unresolvedLine(day,c.revenueDescription || `Product Revenue - ${country}`,'credit',amount,debits,credits,'revenue_export');
           audits.push({ severity:'REVIEW', category:'GL Mapping', date:day, order:'', country, message:`Revenue for ${country} has no configured GL account. Map it before Xero export.`, fix: { type: 'countryRevenue', country } });
@@ -588,6 +584,9 @@
       // Keep downloads complete even when a mapping is still under review.
       // Unresolved lines are included with a blank account/tax rate and a clear REVIEW description.
       xeroOrder.forEach(line => {
+        // Xero CSV only: GST is calculated by Xero from the tax rates on the imported lines.
+        // Do not export the explicit GST or GST-on-Refund journal rows, otherwise GST would be duplicated.
+        if (line._meta === 'gst' || line._meta === 'gst_refund') return;
         xeroRows.push({
           '*Narration': `Sales for the period ${formatNarrationDate(day)}`,
           '*Date': formatDateDMY(day),

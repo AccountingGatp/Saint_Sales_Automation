@@ -24,46 +24,80 @@
   }
   const clone = x => JSON.parse(JSON.stringify(x));
   const normalizedConfig = extra => deepMerge(clone(BASE_CONFIG), extra || {});
-  const STORAGE_KEY = 'saintSalesConfigV4';
-  const LEGACY_STORAGE_KEY = 'saintSalesConfigV3';
+  const STORAGE_KEY = 'saintSalesOverridesV1';
 
-  function isPlainObject(v){ return !!v && typeof v === 'object' && !Array.isArray(v); }
-  function configDiff(base,current){
-    if(!isPlainObject(current)) return current;
-    const out={};
-    Object.keys(current).forEach(k=>{
-      const cv=current[k], bv=isPlainObject(base) ? base[k] : undefined;
-      if(isPlainObject(cv)){
-        const nested=configDiff(isPlainObject(bv)?bv:{},cv);
-        if(Object.keys(nested).length) out[k]=nested;
-      }else if(JSON.stringify(cv)!==JSON.stringify(bv)) out[k]=cv;
+  function validAccount(v){ return v !== '' && v != null && Number.isFinite(Number(v)); }
+
+  // Build a small override patch. This keeps saved Review mappings across browser/PC restarts
+  // without saving a stale full copy of the application configuration.
+  function diffConfig(base,current){
+    const out={countries:{},gateways:{}};
+    Object.entries(current.countries||{}).forEach(([country,c])=>{
+      const b=(base.countries||{})[country]||{};
+      const patch={};
+      ['revenueAccount','revenueDescription','revenueTaxRate','revenueOrder','refundAccount','refundDescription','refundTaxRate','refundOrder','taxAccount','taxDescription','taxRate','taxOrder'].forEach(k=>{
+        if(JSON.stringify(c[k])!==JSON.stringify(b[k]) && c[k]!==undefined) patch[k]=c[k];
+      });
+      if(Object.keys(patch).length) out.countries[country]=patch;
     });
+    Object.entries(current.gateways||{}).forEach(([name,g])=>{
+      const b=(base.gateways||{})[name]||{};
+      const patch={};
+      ['accountCode','journalDescription','xeroDescription','taxRate','reportOrder','journalOrder','aliases'].forEach(k=>{
+        if(JSON.stringify(g[k])!==JSON.stringify(b[k]) && g[k]!==undefined) patch[k]=g[k];
+      });
+      if(Object.keys(patch).length) out.gateways[name]=patch;
+    });
+    // Keep explicitly changed advanced settings/mappings, but never carry the retired revenue fallback.
+    ['settings','australia','gst','exportShipping','rounding','fallbackRefund','fallbackOtherTax'].forEach(section=>{
+      if(JSON.stringify(current[section])!==JSON.stringify(base[section])) out[section]=clone(current[section]);
+    });
+    if(!Object.keys(out.countries).length) delete out.countries;
+    if(!Object.keys(out.gateways).length) delete out.gateways;
     return out;
   }
-  function loadConfig(){
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if(saved) return normalizedConfig(JSON.parse(saved));
 
-      // One-time migration from the older full-config storage format. Only the
-      // differences from the current shipped configuration are kept as user overrides.
-      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if(legacy){
-        const legacyConfig=normalizedConfig(JSON.parse(legacy));
-        const overrides=configDiff(BASE_CONFIG,legacyConfig);
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(overrides));
-        return normalizedConfig(overrides);
-      }
-      return normalizedConfig(null);
-    } catch(_) { return normalizedConfig(null); }
+  function migrateLegacy(){
+    try{
+      const oldRaw=localStorage.getItem('saintSalesConfigV3');
+      if(!oldRaw || localStorage.getItem(STORAGE_KEY)) return;
+      const old=JSON.parse(oldRaw);
+      const patch={countries:{},gateways:{}};
+      // Preserve only values that could have been entered through Review: new country mappings,
+      // missing fields completed on existing countries, and new gateway clearing mappings.
+      Object.entries(old.countries||{}).forEach(([country,c])=>{
+        const b=(BASE_CONFIG.countries||{})[country];
+        if(!b){
+          const p={};
+          if(validAccount(c.revenueAccount)) Object.assign(p,{revenueAccount:c.revenueAccount,revenueDescription:c.revenueDescription||`Product Revenue - ${country}`,revenueTaxRate:c.revenueTaxRate||'BAS Excluded'});
+          if(validAccount(c.refundAccount)) Object.assign(p,{refundAccount:c.refundAccount,refundDescription:c.refundDescription||`Refunds - ${country}`,refundTaxRate:c.refundTaxRate||'BAS Excluded'});
+          if(validAccount(c.taxAccount)) Object.assign(p,{taxAccount:c.taxAccount,taxDescription:c.taxDescription||`Other Tax - ${country}`,taxRate:c.taxRate||'BAS Excluded'});
+          if(Object.keys(p).length) patch.countries[country]=p;
+        }else{
+          const p={};
+          if(!validAccount(b.revenueAccount) && validAccount(c.revenueAccount)) Object.assign(p,{revenueAccount:c.revenueAccount,revenueDescription:c.revenueDescription||`Product Revenue - ${country}`,revenueTaxRate:c.revenueTaxRate||'BAS Excluded'});
+          if(!validAccount(b.refundAccount) && validAccount(c.refundAccount)) Object.assign(p,{refundAccount:c.refundAccount,refundDescription:c.refundDescription||`Refunds - ${country}`,refundTaxRate:c.refundTaxRate||'BAS Excluded'});
+          if(!validAccount(b.taxAccount) && validAccount(c.taxAccount)) Object.assign(p,{taxAccount:c.taxAccount,taxDescription:c.taxDescription||`Other Tax - ${country}`,taxRate:c.taxRate||'BAS Excluded'});
+          if(Object.keys(p).length) patch.countries[country]=p;
+        }
+      });
+      Object.entries(old.gateways||{}).forEach(([name,g])=>{
+        if(!(BASE_CONFIG.gateways||{})[name] && validAccount(g.accountCode)){
+          patch.gateways[name]={accountCode:g.accountCode,journalDescription:g.journalDescription||`${name} Clearing Account`,xeroDescription:g.xeroDescription||`${name} Clearing`,taxRate:g.taxRate||'BAS Excluded',aliases:Array.isArray(g.aliases)&&g.aliases.length?g.aliases:[String(name).toLowerCase()]};
+        }
+      });
+      if(!Object.keys(patch.countries).length) delete patch.countries;
+      if(!Object.keys(patch.gateways).length) delete patch.gateways;
+      if(Object.keys(patch).length) localStorage.setItem(STORAGE_KEY,JSON.stringify(patch));
+    }catch(_){ }
+  }
+
+  function loadConfig(){
+    try { migrateLegacy(); const saved=localStorage.getItem(STORAGE_KEY); return normalizedConfig(saved ? JSON.parse(saved) : null); }
+    catch(_) { return normalizedConfig(null); }
   }
   let config = loadConfig();
-  function saveConfig(){
-    // Store only user-entered overrides/new GL mappings. This prevents an old saved
-    // copy of the whole config from overriding future shipped corrections next week.
-    // localStorage survives browser close and PC shutdown on the same browser/site.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(configDiff(BASE_CONFIG,config)));
-  }
+  const saveConfig = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(diffConfig(BASE_CONFIG,config)));
 
   function invalidateResult(){
     result = null;
@@ -323,7 +357,7 @@
     }
     if(fix.type==='countryRevenue'){
       c.revenueAccount=account;
-      if(!c.revenueDescription || /\bother\b/i.test(c.revenueDescription)) c.revenueDescription=`Product Revenue - ${country}`;
+      if(!c.revenueDescription) c.revenueDescription=`${config.fallbackRevenue.descriptionPrefix||'Product Revenue'} - ${country}`;
       if(!c.revenueTaxRate) c.revenueTaxRate=config.fallbackRevenue.taxRate||'BAS Excluded';
       return `${country} revenue GL`;
     }
@@ -342,7 +376,7 @@
       saveConfig();
       process();
       const action=$('reviewActionMsg');
-      action.textContent = `${label} saved for future files on this browser. All outputs were reprocessed automatically.`;
+      action.textContent = `${label} saved. All output files were reprocessed automatically.`;
       action.classList.remove('hidden');
     }catch(err){ showError(err.message||String(err)); inp.focus(); }
   });
@@ -381,7 +415,8 @@
       ['Australia Shipping','australia.shipping',config.australia.shipping],
       ['Australia Revenue','australia.revenue',config.australia.revenue],
       ['GST','gst',config.gst],['Export Shipping','exportShipping',config.exportShipping],
-      ['Rounding','rounding',config.rounding]
+      ['Rounding','rounding',config.rounding],['Fallback Revenue','fallbackRevenue',config.fallbackRevenue],
+      ['Fallback Refund','fallbackRefund',config.fallbackRefund],['Fallback Other Tax','fallbackOtherTax',config.fallbackOtherTax]
     ];
     let h='<table><thead><tr><th>Mapping</th><th>Account</th><th>Description</th><th>Tax Rate</th></tr></thead><tbody>';
     rows.forEach(([name,path,obj])=>{
@@ -412,7 +447,7 @@
     let h='<table><thead><tr><th>Country</th><th>Revenue GL</th><th>Revenue description</th><th>Refund GL</th><th>Refund description</th><th>Other tax GL</th><th>Other tax description</th></tr></thead><tbody>';
     result.countries.forEach(c=>{
       const m=config.countries[c]||{};
-      h += `<tr><td>${esc(c)}</td><td>${input(`countries.${pathKey(c)}.revenueAccount`,m.revenueAccount??'')}</td><td>${input(`countries.${pathKey(c)}.revenueDescription`,m.revenueDescription||`Product Revenue - ${c}`,'desc')}</td><td>${input(`countries.${pathKey(c)}.refundAccount`,m.refundAccount??'')}</td><td>${input(`countries.${pathKey(c)}.refundDescription`,m.refundDescription||`Refunds - ${c}`,'desc')}</td><td>${input(`countries.${pathKey(c)}.taxAccount`,m.taxAccount??'')}</td><td>${input(`countries.${pathKey(c)}.taxDescription`,m.taxDescription||`Other Tax - ${c}`,'desc')}</td></tr>`;
+      h += `<tr><td>${esc(c)}</td><td>${input(`countries.${pathKey(c)}.revenueAccount`,m.revenueAccount??'')}</td><td>${input(`countries.${pathKey(c)}.revenueDescription`,m.revenueDescription||`${config.fallbackRevenue.descriptionPrefix || 'Product Revenue'} - ${c}`,'desc')}</td><td>${input(`countries.${pathKey(c)}.refundAccount`,m.refundAccount??'')}</td><td>${input(`countries.${pathKey(c)}.refundDescription`,m.refundDescription||`Refunds - ${c}`,'desc')}</td><td>${input(`countries.${pathKey(c)}.taxAccount`,m.taxAccount??'')}</td><td>${input(`countries.${pathKey(c)}.taxDescription`,m.taxDescription||`Other Tax - ${c}`,'desc')}</td></tr>`;
     });
     $('countryMap').innerHTML = h+'</tbody></table>';
   }
@@ -434,7 +469,6 @@
   });
   $('resetMappingBtn').addEventListener('click',()=>{
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
     config=normalizedConfig(null);
     if(raw.net && raw.sales) process(); else renderMappings();
   });
