@@ -263,6 +263,12 @@ window.SAINT_SALES_BASE_CONFIG = {
       "refundDescription": "Refunds - Peru",
       "refundTaxRate": "BAS Excluded",
       "refundOrder": 120
+    },
+    "Indonesia": {
+      "revenueAccount": 988,
+      "revenueDescription": "Product Revenue - Indonesia",
+      "revenueTaxRate": "BAS Excluded",
+      "revenueOrder": 200
     }
   }
 };

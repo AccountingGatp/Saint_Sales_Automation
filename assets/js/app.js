@@ -93,8 +93,21 @@
   }
 
   function loadConfig(){
-    try { migrateLegacy(); const saved=localStorage.getItem(STORAGE_KEY); return normalizedConfig(saved ? JSON.parse(saved) : null); }
-    catch(_) { return normalizedConfig(null); }
+    try {
+      migrateLegacy();
+      const saved=localStorage.getItem(STORAGE_KEY);
+      const extra=saved ? JSON.parse(saved) : null;
+      // Indonesia now has an authoritative base revenue mapping (GL 988).
+      // Drop any stale saved revenue override for Indonesia while preserving any
+      // separately saved refund/tax mappings for that country.
+      if(extra && extra.countries && extra.countries.Indonesia && typeof extra.countries.Indonesia === 'object'){
+        ['revenueAccount','revenueDescription','revenueTaxRate','revenueOrder'].forEach(k=>delete extra.countries.Indonesia[k]);
+        if(!Object.keys(extra.countries.Indonesia).length) delete extra.countries.Indonesia;
+        if(!Object.keys(extra.countries).length) delete extra.countries;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(extra)); } catch(_){}
+      }
+      return normalizedConfig(extra);
+    } catch(_) { return normalizedConfig(null); }
   }
   let config = loadConfig();
   const saveConfig = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(diffConfig(BASE_CONFIG,config)));

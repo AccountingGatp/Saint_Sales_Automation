@@ -10,3 +10,5 @@ LATEST SALES AUTOMATION CHANGES
 8. Legacy named-country revenue mappings containing 'Other' are treated as unresolved. Vietnam's legacy Other mapping is no longer used; an exact Vietnam revenue GL must be entered when Vietnam appears.
 9. Export/Import Mapping remains available as a backup.
 10. Manual Journal date remains DD/MM/YYYY.
+
+11. Added Product Revenue - Indonesia with GL account code 988. No Indonesia refund GL is assumed; if a refund occurs and its GL is not configured, Review handles it as missing.

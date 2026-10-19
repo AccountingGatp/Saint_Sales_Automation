@@ -12,3 +12,7 @@ PASS - Missing country GLs appear in Review and can be saved/reused.
 PASS - Saved mappings are stored as small browser overrides, preventing stale prior-week/base configuration from contaminating later weeks.
 PASS - Xero/Manual Import date remains DD/MM/YYYY.
 PASS - Downloads remain available while Review items exist.
+
+PASS - Indonesia Product Revenue maps to GL 988 in the Xero CSV.
+PASS - Stale saved Indonesia revenue overrides are discarded on load; any separately saved Indonesia refund/tax mapping is preserved.
+PASS - Indonesia refunds without a refund GL still produce a Review item instead of borrowing another country's GL.
