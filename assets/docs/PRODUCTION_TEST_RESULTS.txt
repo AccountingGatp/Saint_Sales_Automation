@@ -16,3 +16,6 @@ PASS - Downloads remain available while Review items exist.
 PASS - Indonesia Product Revenue maps to GL 988 in the Xero CSV.
 PASS - Stale saved Indonesia revenue overrides are discarded on load; any separately saved Indonesia refund/tax mapping is preserved.
 PASS - Indonesia refunds without a refund GL still produce a Review item instead of borrowing another country's GL.
+
+PASS - Denmark refunds map to GL 209 with description 'Refunds - Denmark' and BAS Excluded tax rate.
+PASS - A stale saved Denmark refund override is removed on load, preserving other Denmark fields and other countries' saved mappings.

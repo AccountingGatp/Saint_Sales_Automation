@@ -106,6 +106,14 @@
         if(!Object.keys(extra.countries).length) delete extra.countries;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(extra)); } catch(_){}
       }
+      // Denmark now has an authoritative Refunds GL (209). Remove any stale saved
+      // refund override for Denmark so the new base mapping is used in this browser.
+      if(extra && extra.countries && extra.countries.Denmark && typeof extra.countries.Denmark === 'object'){
+        ['refundAccount','refundDescription','refundTaxRate','refundOrder'].forEach(k=>delete extra.countries.Denmark[k]);
+        if(!Object.keys(extra.countries.Denmark).length) delete extra.countries.Denmark;
+        if(!Object.keys(extra.countries).length) delete extra.countries;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(extra)); } catch(_){}
+      }
       return normalizedConfig(extra);
     } catch(_) { return normalizedConfig(null); }
   }

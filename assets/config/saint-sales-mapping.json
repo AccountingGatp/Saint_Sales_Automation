@@ -240,7 +240,11 @@
       "revenueAccount": 338,
       "revenueDescription": "Product Revenue - Denmark",
       "revenueTaxRate": "BAS Excluded",
-      "revenueOrder": 160
+      "revenueOrder": 160,
+      "refundAccount": 209,
+      "refundDescription": "Refunds - Denmark",
+      "refundTaxRate": "BAS Excluded",
+      "refundOrder": 130
     },
     "Hong Kong": {
       "revenueAccount": 267,

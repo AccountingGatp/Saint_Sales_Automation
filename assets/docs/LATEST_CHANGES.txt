@@ -12,3 +12,5 @@ LATEST SALES AUTOMATION CHANGES
 10. Manual Journal date remains DD/MM/YYYY.
 
 11. Added Product Revenue - Indonesia with GL account code 988. No Indonesia refund GL is assumed; if a refund occurs and its GL is not configured, Review handles it as missing.
+
+12. Added Denmark Refunds mapping: account 209, description 'Refunds - Denmark', tax rate BAS Excluded. Stale saved Denmark refund overrides are removed so the new base mapping is used.
