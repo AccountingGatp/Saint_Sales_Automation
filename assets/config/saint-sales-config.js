@@ -273,6 +273,12 @@ window.SAINT_SALES_BASE_CONFIG = {
       "revenueDescription": "Product Revenue - Indonesia",
       "revenueTaxRate": "BAS Excluded",
       "revenueOrder": 200
+    },
+    "Mexico": {
+      "revenueAccount": 331,
+      "revenueDescription": "Product Revenue - Mexico",
+      "revenueTaxRate": "BAS Excluded",
+      "revenueOrder": 210
     }
   }
 };

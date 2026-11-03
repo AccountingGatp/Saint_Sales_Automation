@@ -14,3 +14,9 @@ LATEST SALES AUTOMATION CHANGES
 11. Added Product Revenue - Indonesia with GL account code 988. No Indonesia refund GL is assumed; if a refund occurs and its GL is not configured, Review handles it as missing.
 
 12. Added Denmark Refunds mapping: account 209, description 'Refunds - Denmark', tax rate BAS Excluded. Stale saved Denmark refund overrides are removed so the new base mapping is used.
+
+
+13. Confirmed Product Revenue - Peru uses GL 273 and added Product Revenue - Mexico with GL 331. Existing Peru Refunds GL 274 is preserved.
+14. Country matching now ignores accents and punctuation, so Peru/Perú and Mexico/México resolve to their canonical country mappings.
+15. On app startup, stale saved browser revenue overrides for Peru and Mexico are removed so they cannot override the authoritative GLs. Other saved refund/tax mappings remain intact.
+16. Local script URLs are versioned to force browsers/Vercel clients to load the updated config and mapping logic.

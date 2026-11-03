@@ -140,14 +140,29 @@
     return s || 'Unknown';
   }
 
+  function countryLookupKey(value) {
+    return String(value == null ? '' : value)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim().replace(/\s+/g, ' ');
+  }
+
   function normalizeCountry(v, cfg) {
     const s = String(v == null ? '' : v).trim();
     if (!s) return '';
-    const l = s.toLowerCase();
-    if (l === 'australia') return 'Australia';
+    const key = countryLookupKey(s);
+    if (key === 'australia') return 'Australia';
     const countries = (cfg && cfg.countries) || {};
-    const exact = Object.keys(countries).find(c => c.toLowerCase() === l);
-    return exact || s;
+    const exact = Object.keys(countries).find(c => countryLookupKey(c) === key);
+    if (exact) return exact;
+    // Source exports may vary accents or use formal country names.
+    const aliases = {
+      'republic of peru': 'Peru',
+      'united mexican states': 'Mexico'
+    };
+    return aliases[key] && countries[aliases[key]] ? aliases[key] : s;
   }
 
   function isValidAccount(v) {

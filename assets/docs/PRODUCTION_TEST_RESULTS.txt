@@ -19,3 +19,18 @@ PASS - Indonesia refunds without a refund GL still produce a Review item instead
 
 PASS - Denmark refunds map to GL 209 with description 'Refunds - Denmark' and BAS Excluded tax rate.
 PASS - A stale saved Denmark refund override is removed on load, preserving other Denmark fields and other countries' saved mappings.
+
+
+PASS - Product Revenue - Peru is configured as GL 273 in both runtime JS config and mapping JSON.
+PASS - Refunds - Peru remains configured as GL 274.
+PASS - Product Revenue - Mexico is configured as GL 331 in both runtime JS config and mapping JSON.
+PASS - Accent-insensitive country normalization resolves Perú to Peru and México to Mexico.
+PASS - Browser startup cleanup removes stale Peru/Mexico revenue overrides while preserving their separate refund/tax mapping fields.
+PASS - Local config/engine/app script URLs include a new version token to avoid stale browser-cached JavaScript.
+PASS - Synthetic Xero export regression: Peru product revenue outputs AccountCode 273.
+PASS - Synthetic Xero export regression: Peru refunds output AccountCode 274.
+PASS - Synthetic Xero export regression: Mexico product revenue outputs AccountCode 331.
+PASS - Synthetic country-label regression: Perú and México resolve to the canonical Peru/Mexico mappings.
+PASS - Synthetic Mexico refund regression: without a Mexico refund GL, the refund row is left unmapped and shown in Review; no other country's GL is borrowed.
+PASS - Browser override cleanup and imported-mapping cleanup are present for Peru/Mexico revenue fields; separate refund/tax fields are preserved.
+PASS - JavaScript syntax checks passed for app.js and sales-engine.js.

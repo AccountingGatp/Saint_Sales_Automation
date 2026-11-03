@@ -26,6 +26,18 @@
   const normalizedConfig = extra => deepMerge(clone(BASE_CONFIG), extra || {});
   const STORAGE_KEY = 'saintSalesOverridesV1';
 
+  function removeAuthoritativeRevenueOverrides(extra){
+    if(!extra || !extra.countries || typeof extra.countries !== 'object') return extra;
+    ['Peru','Mexico'].forEach(country=>{
+      const mapping=extra.countries[country];
+      if(!mapping || typeof mapping !== 'object') return;
+      ['revenueAccount','revenueDescription','revenueTaxRate','revenueOrder'].forEach(k=>delete mapping[k]);
+      if(!Object.keys(mapping).length) delete extra.countries[country];
+    });
+    if(!Object.keys(extra.countries).length) delete extra.countries;
+    return extra;
+  }
+
   function validAccount(v){ return v !== '' && v != null && Number.isFinite(Number(v)); }
 
   // Build a small override patch. This keeps saved Review mappings across browser/PC restarts
@@ -106,6 +118,11 @@
         if(!Object.keys(extra.countries).length) delete extra.countries;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(extra)); } catch(_){}
       }
+      // Peru (273) and Mexico (331) are authoritative base revenue mappings.
+      // Remove stale browser values while preserving separate refund/tax mappings.
+      removeAuthoritativeRevenueOverrides(extra);
+      try { if(saved) localStorage.setItem(STORAGE_KEY, JSON.stringify(extra || {})); } catch(_){}
+
       // Denmark now has an authoritative Refunds GL (209). Remove any stale saved
       // refund override for Denmark so the new base mapping is used in this browser.
       if(extra && extra.countries && extra.countries.Denmark && typeof extra.countries.Denmark === 'object'){
@@ -501,6 +518,7 @@
     try{
       const parsed=JSON.parse(await f.text());
       if(!parsed || typeof parsed!=='object') throw new Error('Invalid mapping JSON.');
+      removeAuthoritativeRevenueOverrides(parsed);
       config=normalizedConfig(parsed); saveConfig();
       if(raw.net && raw.sales) process(); else renderMappings();
       showOk('Settings imported.');
